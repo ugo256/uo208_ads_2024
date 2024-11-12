@@ -2,6 +2,7 @@ from .config import *
 
 from . import access
 import matplotlib.pyplot as plt
+import osmnx as ox
 
 """These are the types of import we might expect in this file
 import pandas
