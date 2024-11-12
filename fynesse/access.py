@@ -133,6 +133,7 @@ def get_houses_with_transactions(conn,place_name,latitude,longitude):
 
     present_keys = [key for key in keys if key in pois.columns]
     all_pois=pois[present_keys]
+    all_pois["area"]=all_pois["geometry"].area
     all_pois["streetname"]=all_pois["addr:street"].str.lower()
     print("merging")
     merged_df = pd.merge(all_pois, pp_df, left_on=["addr:housenumber", "streetname"], right_on=["primary_addressable_object_name", "streetname"], how="inner")
