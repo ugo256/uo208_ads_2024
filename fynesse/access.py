@@ -3,6 +3,9 @@ from .config import *
 import requests
 import pymysql
 import csv
+import math
+import pandas as pd
+
 
 """These are the types of import we might expect in this file
 import httplib2
@@ -81,3 +84,50 @@ def housing_upload_join_data(conn, year):
     cur.execute(f"LOAD DATA LOCAL INFILE '" + csv_file_path + "' INTO TABLE `prices_coordinates_data` FIELDS TERMINATED BY ',' OPTIONALLY ENCLOSED by '\"' LINES STARTING BY '' TERMINATED BY '\n';")
     conn.commit()
     print('Data stored for year: ' + str(year))
+
+
+def get_bounding_box(latitude: float, longitude: float, distance_km: float) -> dict[str,float]:
+    box_width = distance_km/(40075*math.cos(math.radians(latitude)))*360
+    box_height = distance_km/(40075/360)
+    north = latitude + box_height/2
+    south = latitude - box_height/2
+    west = longitude - box_width/2
+    east = longitude + box_width/2
+    return {"north":north,
+            "east":east,
+            "south":south,
+            "west":west}
+
+def get_pois(bbox,tags):
+  return ox.geometries_from_bbox(bbox["north"], bbox["south"], bbox["east"], bbox["west"], tags)
+
+def get_pois_df(bbox:dict,tags:dict) -> pd.DataFrame:
+  pois = get_pois(bbox,tags)
+  pois_df = pd.DataFrame(pois)
+  pois_df['latitude'] = pois_df.apply(lambda row: row.geometry.centroid.y, axis=1)
+  pois_df['longitude'] = pois_df.apply(lambda row: row.geometry.centroid.x, axis=1)
+  return pois_df
+
+def get_houses_with_transactions(conn,place_name,latitude,longitude):
+    cur = conn.cursor()
+    cur.execute(f"select * from `pp_data` where town_city = '{place_name.upper()}'")
+    data = cur.fetchall()
+    columns = [desc[0] for desc in cur.description]
+    pp_df = pd.DataFrame(data, columns=columns)
+
+    
+    pp_df["streetname"]=pp_df["street"].str.lower()
+
+    bbox = get_bounding_box(latitude,longitude)
+    pois = get_pois(bbox,{"building":True})
+
+    north=bbox["north"]
+    east=bbox["east"]
+    south=bbox["south"]
+    west=bbox["west"]
+
+    keys = ["addr:housenumber", "addr:street", "addr:postcode","geometry","longitude","latitude"]
+
+    present_keys = [key for key in keys if key in pois.columns]
+    all_pois=pois[present_keys]
+    all_pois["streetname"]=all_pois["addr:street"].str.lower()
