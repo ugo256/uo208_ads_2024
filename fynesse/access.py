@@ -86,7 +86,7 @@ def housing_upload_join_data(conn, year):
     print('Data stored for year: ' + str(year))
 
 
-def get_bounding_box(latitude: float, longitude: float, distance_km: float) -> dict[str,float]:
+def get_bounding_box(latitude: float, longitude: float, distance_km: float = 1.0) -> dict[str,float]:
     box_width = distance_km/(40075*math.cos(math.radians(latitude)))*360
     box_height = distance_km/(40075/360)
     north = latitude + box_height/2
