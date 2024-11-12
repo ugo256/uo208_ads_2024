@@ -61,7 +61,8 @@ def plot_city(place_name,latitude,longitude):
     plt.tight_layout()
 
 def plot_correlation(merged_df,method='pearson',log=False):
-    print(f"The correlation ({method}) is {(merged_df["area"].corr(merged_df["price"],method=method))}")
+    correlation = (merged_df["area"].corr(merged_df["price"],method=method))
+    print(f"The correlation ({method}) is {correlation}")
     print("plotting graph:")
 
     plt.scatter(merged_df["area"], merged_df["price"], color="blue", alpha=0.7)
