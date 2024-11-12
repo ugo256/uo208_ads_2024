@@ -5,6 +5,7 @@ import pymysql
 import csv
 import math
 import pandas as pd
+import osmnx as ox
 
 
 """These are the types of import we might expect in this file
