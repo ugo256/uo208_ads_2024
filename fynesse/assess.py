@@ -60,6 +60,21 @@ def plot_city(place_name,latitude,longitude):
     invalid_pois.plot(ax=ax, color="red", alpha=0.7, markersize=10)
     plt.tight_layout()
 
+def plot_correlation(merged_df,method='pearson',log=False):
+    print(f"The correlation ({method}) is {(merged_df["area"].corr(merged_df["price"],method=method))}")
+    print("plotting graph:")
+
+    plt.scatter(merged_df["area"], merged_df["price"], color="blue", alpha=0.7)
+
+    plt.xlabel("Area (sq km)")
+    plt.ylabel("Price (£)")
+    plt.title("Scatter Plot of Area vs. Price")
+    plt.yscale("log")
+    plt.xscale("log")
+
+    plt.show()
+
+
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
     df = access.data()

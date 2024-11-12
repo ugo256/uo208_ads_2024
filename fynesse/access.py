@@ -111,7 +111,9 @@ def get_pois_df(bbox:dict,tags:dict) -> pd.DataFrame:
 
 def get_houses_with_transactions(conn,place_name,latitude,longitude):
     cur = conn.cursor()
+    print("selecting data")
     cur.execute(f"select * from `pp_data` where town_city = '{place_name.upper()}'")
+    print("finished selecting")
     data = cur.fetchall()
     columns = [desc[0] for desc in cur.description]
     pp_df = pd.DataFrame(data, columns=columns)
@@ -132,6 +134,6 @@ def get_houses_with_transactions(conn,place_name,latitude,longitude):
     present_keys = [key for key in keys if key in pois.columns]
     all_pois=pois[present_keys]
     all_pois["streetname"]=all_pois["addr:street"].str.lower()
-
+    print("merging")
     merged_df = pd.merge(all_pois, pp_df, left_on=["addr:housenumber", "streetname"], right_on=["primary_addressable_object_name", "streetname"], how="inner")
     return merged_df
