@@ -69,8 +69,9 @@ def plot_correlation(merged_df,method='pearson',log=False):
     plt.xlabel("Area (sq km)")
     plt.ylabel("Price (£)")
     plt.title("Scatter Plot of Area vs. Price")
-    plt.yscale("log")
-    plt.xscale("log")
+    if log:
+        plt.yscale("log")
+        plt.xscale("log")
 
     plt.show()
 
