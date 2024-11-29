@@ -5,8 +5,8 @@ import pymysql
 import csv
 import math
 import pandas as pd
-import osmnx as ox
-
+import yaml
+from ipywidgets import interact_manual, Text, Password
 
 """These are the types of import we might expect in this file
 import httplib2
@@ -22,9 +22,6 @@ import sqlite"""
 def data():
     """Read the data from the web or local file, returning structured format such as a data frame"""
     raise NotImplementedError
-
-def hello_world():
-  print("Hello from the data science library!")
 
 def download_price_paid_data(year_from, year_to):
     # Base URL where the dataset is stored 
@@ -64,6 +61,28 @@ def create_connection(user, password, host, database, port=3306):
     except Exception as e:
         print(f"Error connecting to the MariaDB Server: {e}")
     return conn
+
+def write_credentials():
+    @interact_manual(username=Text(description="Username:"),
+                password=Password(description="Password:"),
+                url=Text(description="URL:"),
+                port=Text(description="Port:"))
+    def write_credentials(username, password, url, port):
+        with open("credentials.yaml", "w") as file:
+            credentials_dict = {'username': username,
+                            'password': password,
+                            'url': url,
+                            'port': port}
+            yaml.dump(credentials_dict, file)
+
+def read_credentials():
+    with open("credentials.yaml") as file:
+        credentials = yaml.safe_load(file)
+    username = credentials["username"]
+    password = credentials["password"]
+    url = credentials["url"]
+    port = credentials["port"]
+    return username,password,url,port
 
 def housing_upload_join_data(conn, year):
     start_date = str(year) + "-01-01"
