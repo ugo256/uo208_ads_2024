@@ -38,50 +38,6 @@ def download_price_paid_data(year_from, year_to):
                 with open("." + file_name.replace("<year>", str(year)).replace("<part>", str(part)), "wb") as file:
                     file.write(response.content)
 
-def create_connection(user, password, host, database, port=3306):
-    """ Create a database connection to the MariaDB database
-        specified by the host url and database name.
-    :param user: username
-    :param password: password
-    :param host: host url
-    :param database: database name
-    :param port: port number
-    :return: Connection object or None
-    """
-    conn = None
-    try:
-        conn = pymysql.connect(user=user,
-                               passwd=password,
-                               host=host,
-                               port=port,
-                               local_infile=1,
-                               db=database
-                               )
-        print(f"Connection established!")
-    except Exception as e:
-        print(f"Error connecting to the MariaDB Server: {e}")
-    return conn
-
-@interact_manual(username=Text(description="Username:"),
-                password=Password(description="Password:"),
-                url=Text(description="URL:"),
-                port=Text(description="Port:"))
-def write_credentials():
-    with open("credentials.yaml", "w") as file:
-        credentials_dict = {'username': username,
-                        'password': password,
-                        'url': url,
-                        'port': port}
-        yaml.dump(credentials_dict, file)
-
-def read_credentials():
-    with open("credentials.yaml") as file:
-        credentials = yaml.safe_load(file)
-    username = credentials["username"]
-    password = credentials["password"]
-    url = credentials["url"]
-    port = credentials["port"]
-    return username,password,url,port
 
 def housing_upload_join_data(conn, year):
     start_date = str(year) + "-01-01"
@@ -106,14 +62,58 @@ def housing_upload_join_data(conn, year):
 
 class Database:
 
-    conn = None
-
     def __init__(self):
-        write_credentials()
-        print(1)
-        username,password,url,port = read_credentials()
-        print(2)
-        self.conn = create_connection(username,password,url,'ads_2024',port)
+        self.conn=None
+
+    @interact_manual(username=Text(description="Username:"),
+                password=Password(description="Password:"),
+                url=Text(description="URL:"),
+                port=Text(description="Port:"))
+    def write_credentials():
+        with open("credentials.yaml", "w") as file:
+            credentials_dict = {'username': username,
+                            'password': password,
+                            'url': url,
+                            'port': port}
+            yaml.dump(credentials_dict, file)
+        
+    def read_credentials():
+        with open("credentials.yaml") as file:
+            credentials = yaml.safe_load(file)
+        username = credentials["username"]
+        password = credentials["password"]
+        url = credentials["url"]
+        port = credentials["port"]
+        return username,password,url,port
+    
+
+    def connect(self, user, password, host, database, port=3306):
+        """ Create a database connection to the MariaDB database
+            specified by the host url and database name.
+        :param user: username
+        :param password: password
+        :param host: host url
+        :param database: database name
+        :param port: port number
+        :return: Connection object or None
+        """
+        conn = None
+        try:
+            conn = pymysql.connect(user=user,
+                                passwd=password,
+                                host=host,
+                                port=port,
+                                local_infile=1,
+                                db=database
+                                )
+            print(f"Connection established!")
+        except Exception as e:
+            print(f"Error connecting to the MariaDB Server: {e}")
+        self.conn = conn
+
+    def create_connection(self):
+        username,password,url,port = self.read_credentials()
+        self.connect(username,password,url,'ads_2024',port)
 
     def query(self,query,as_df=True):
         cur = self.conn.cursor()
