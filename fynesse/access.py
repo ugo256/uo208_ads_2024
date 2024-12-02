@@ -69,7 +69,7 @@ class Database:
                 password=Password(description="Password:"),
                 url=Text(description="URL:"),
                 port=Text(description="Port:"))
-    def write_credentials():
+    def write_credentials(self):
         with open("credentials.yaml", "w") as file:
             credentials_dict = {'username': username,
                             'password': password,
@@ -77,7 +77,7 @@ class Database:
                             'port': port}
             yaml.dump(credentials_dict, file)
         
-    def read_credentials():
+    def _read_credentials(self):
         with open("credentials.yaml") as file:
             credentials = yaml.safe_load(file)
         username = credentials["username"]
@@ -87,7 +87,7 @@ class Database:
         return username,password,url,port
     
 
-    def connect(self, user, password, host, database, port=3306):
+    def _connect(self, user, password, host, database, port=3306):
         """ Create a database connection to the MariaDB database
             specified by the host url and database name.
         :param user: username
@@ -112,8 +112,8 @@ class Database:
         self.conn = conn
 
     def create_connection(self):
-        username,password,url,port = self.read_credentials()
-        self.connect(username,password,url,'ads_2024',port)
+        username,password,url,port = self._read_credentials()
+        self._connect(username,password,url,'ads_2024',port)
 
     def query(self,query,as_df=True):
         cur = self.conn.cursor()
