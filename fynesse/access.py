@@ -87,7 +87,7 @@ class Database:
         password = credentials["password"]
         url = credentials["url"]
         port = credentials["port"]
-        return username,password,url,port
+        return username,password,url,int(port)
     
 
     def _connect(self, user, password, host, database, port=3306):
