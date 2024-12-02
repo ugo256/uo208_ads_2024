@@ -60,16 +60,17 @@ def housing_upload_join_data(conn, year):
     conn.commit()
     print('Data stored for year: ' + str(year))
 
+
 @interact_manual(username=Text(description="Username:"),
                 password=Password(description="Password:"),
                 url=Text(description="URL:"),
                 port=Text(description="Port:"))
-def write_credentials():
+def write_credentials(username, password, url, port):
     with open("credentials.yaml", "w") as file:
         credentials_dict = {'username': username,
-                        'password': password,
-                        'url': url,
-                        'port': port}
+                           'password': password,
+                           'url': url,
+                           'port': port}
         yaml.dump(credentials_dict, file)
 
 class Database:
