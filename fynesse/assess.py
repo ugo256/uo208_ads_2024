@@ -77,6 +77,9 @@ def plot_correlation(merged_df,method='pearson',log=False):
     plt.show()
 
 
+
+
+
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
     df = access.data()

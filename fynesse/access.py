@@ -62,18 +62,17 @@ def create_connection(user, password, host, database, port=3306):
         print(f"Error connecting to the MariaDB Server: {e}")
     return conn
 
-def write_credentials():
-    @interact_manual(username=Text(description="Username:"),
+@interact_manual(username=Text(description="Username:"),
                 password=Password(description="Password:"),
                 url=Text(description="URL:"),
                 port=Text(description="Port:"))
-    def write_credentials(username, password, url, port):
-        with open("credentials.yaml", "w") as file:
-            credentials_dict = {'username': username,
-                            'password': password,
-                            'url': url,
-                            'port': port}
-            yaml.dump(credentials_dict, file)
+def write_credentials():
+    with open("credentials.yaml", "w") as file:
+        credentials_dict = {'username': username,
+                        'password': password,
+                        'url': url,
+                        'port': port}
+        yaml.dump(credentials_dict, file)
 
 def read_credentials():
     with open("credentials.yaml") as file:
@@ -105,18 +104,20 @@ def housing_upload_join_data(conn, year):
     conn.commit()
     print('Data stored for year: ' + str(year))
 
+class Database:
 
-def get_bounding_box(latitude: float, longitude: float, distance_km: float = 1.0) -> dict[str,float]:
-    box_width = distance_km/(40075*math.cos(math.radians(latitude)))*360
-    box_height = distance_km/(40075/360)
-    north = latitude + box_height/2
-    south = latitude - box_height/2
-    west = longitude - box_width/2
-    east = longitude + box_width/2
-    return {"north":north,
-            "east":east,
-            "south":south,
-            "west":west}
+    conn = None
+
+    def __init__(self):
+        write_credentials()
+        username,password,url,port = read_credentials()
+        self.conn = create_connection(username,password,url,'ads_2024',port)
+
+    def execute_query(self,query,as_df=True):
+        cur = self.conn.cursor()
+        cur.execute(query)
+        if as_df:
+            return pd.DataFrame(cur.fetchall(),columns = [desc[0] for desc in cur.description])
 
 def get_pois(bbox,tags):
   return ox.geometries_from_bbox(bbox["north"], bbox["south"], bbox["east"], bbox["west"], tags)
