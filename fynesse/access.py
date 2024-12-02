@@ -110,7 +110,9 @@ class Database:
 
     def __init__(self):
         write_credentials()
+        print(1)
         username,password,url,port = read_credentials()
+        print(2)
         self.conn = create_connection(username,password,url,'ads_2024',port)
 
     def query(self,query,as_df=True):
