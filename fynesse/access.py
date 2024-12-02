@@ -113,7 +113,7 @@ class Database:
         username,password,url,port = read_credentials()
         self.conn = create_connection(username,password,url,'ads_2024',port)
 
-    def execute_query(self,query,as_df=True):
+    def query(self,query,as_df=True):
         cur = self.conn.cursor()
         cur.execute(query)
         if as_df:
