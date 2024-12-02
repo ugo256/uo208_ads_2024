@@ -127,7 +127,7 @@ class Database:
     def count_nulls(self,table_name):
         cur = self.conn.cursor()
         cur.execute(f"select * from {table_name} limit 0;")
-        return self.query("select "+ ", ".join([f"sum(case when {desc[0]} is null then 1 else 0 end)" for desc in cur.description])+f" from {table_name};")
+        return self.query("select "+ ", ".join([f"sum(case when {desc[0]} is null then 1 else 0 end) as nullcnt({desc[0]})" for desc in cur.description])+f" from {table_name};")
 
 def get_pois(bbox,tags):
   return ox.geometries_from_bbox(bbox["north"], bbox["south"], bbox["east"], bbox["west"], tags)

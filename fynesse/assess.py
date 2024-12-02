@@ -76,7 +76,13 @@ def plot_correlation(merged_df,method='pearson',log=False):
 
     plt.show()
 
+def box_plot(data,label):
+    plt.boxplot(data)
 
+    plt.title(f"Box Plot of {label}")
+    plt.ylabel(label)
+
+    plt.show()
 
 
 
