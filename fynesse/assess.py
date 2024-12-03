@@ -112,6 +112,15 @@ def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10)):
 
     plt.show()
 
+def count_around(db,lon,lat,dist):
+    bbox = access.get_bounding_box(lat,lon,dist)
+
+    north=bbox["north"]
+    east=bbox["east"]
+    south=bbox["south"]
+    west=bbox["west"]
+    return db.query("select tag_key as tkey, count(tag_key) as freq from england_osm_node_geo as nodes inner join england_osm_tags as tags on tags.id = nodes.id  where longitude between {west} and {east} and latitude between {south} and {north} group by tag_key;")
+
 
 
 def data():
