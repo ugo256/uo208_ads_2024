@@ -76,12 +76,22 @@ def plot_correlation(merged_df,method='pearson',log=False):
 
     plt.show()
 
-def box_plot(data,label):
-    plt.boxplot(data)
+def create_boxplot_subplots(data_list, rows, cols, titles=None, figsize=(10, 6)):
 
-    plt.title(f"Box Plot of {label}")
-    plt.ylabel(label)
+    if len(data_list) > rows * cols:
+        raise ValueError("Not enough subplots for the number of datasets.")
 
+    fig, axes = plt.subplots(rows, cols, figsize=figsize, constrained_layout=True)
+    axes = axes.flatten() if rows * cols > 1 else [axes]
+    for i, data in enumerate(data_list):
+        axes[i].boxplot(data)
+        if titles and i < len(titles):
+            axes[i].set_title(titles[i])
+        axes[i].set_ylabel("Values")
+        
+    for j in range(len(data_list), rows * cols):
+        axes[j].axis("off")
+    
     plt.show()
 
 
