@@ -88,10 +88,29 @@ def create_boxplot_subplots(data_list, rows, cols, titles=None, figsize=(10, 6))
         if titles and i < len(titles):
             axes[i].set_title(titles[i])
         axes[i].set_ylabel("Values")
-        
+
     for j in range(len(data_list), rows * cols):
         axes[j].axis("off")
     
+    plt.show()
+
+def create_histogram_subplots(data, columns, bins=10, figsize=(15, 10)):
+
+    num_columns = len(columns)
+    rows = (num_columns + 2) // 3
+    cols = 3
+
+    fig, axes = plt.subplots(rows, cols, figsize=figsize, constrained_layout=True)
+    axes = axes.flatten()
+
+    for i, column in enumerate(columns):
+        axes[i].hist(data[column].dropna(), bins=bins, color='skyblue', edgecolor='black')
+        axes[i].set_title(f"Histogram of {column}")
+        axes[i].set_xlabel(column)
+        axes[i].set_ylabel("Frequency")
+    for j in range(i + 1, len(axes)):
+        axes[j].axis('off')
+
     plt.show()
 
 
