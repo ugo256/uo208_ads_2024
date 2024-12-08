@@ -123,7 +123,7 @@ class DatabaseConnection:
 def count_duplicates(db,table_name,col_names):
     return db.query(f"""
                     select
-                        {col_names} count(*) as cnt
+                        {col_names} , count(*) as cnt
                     from
                         {table_name}
                     group by
