@@ -1,3 +1,4 @@
+from fynesse import utils
 from .config import *
 
 from . import access
@@ -60,6 +61,17 @@ def plot_city(place_name,latitude,longitude):
     invalid_pois.plot(ax=ax, color="red", alpha=0.7, markersize=10)
     plt.tight_layout()
 
+def plot_area(lat,lon,distance,name,tags):
+    bbox = utils.get_bounding_box(lat,lon,distance)
+
+    north=bbox["north"]
+    east=bbox["east"]
+    south=bbox["south"]
+    west=bbox["west"]
+
+
+
+
 def plot_correlation(merged_df,method='pearson',log=False):
     correlation = (merged_df["area"].corr(merged_df["price"],method=method))
     print(f"The correlation ({method}) is {correlation}")
@@ -112,21 +124,12 @@ def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10)):
 
     plt.show()
 
+def count_around(db,lat,lon,dist):
+    bbox = utils.get_bounding_box(lat,lon,dist)
 
+    north=bbox["north"]
+    east=bbox["east"]
+    south=bbox["south"]
+    west=bbox["west"]
 
-def data():
-    """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
-    df = access.data()
-    raise NotImplementedError
-
-def query(data):
-    """Request user input for some aspect of the data."""
-    raise NotImplementedError
-
-def view(data):
-    """Provide a view of the data that allows the user to verify some aspect of its quality."""
-    raise NotImplementedError
-
-def labelled(data):
-    """Provide a labelled set of data ready for supervised learning."""
-    raise NotImplementedError
+    db.query(f"select tag_key as tkey, count(tag_key) as freq from england_osm_node_geo as nodes inner join england_osm_tags as tags on tags.id = nodes.id  where longitude between {west} and {east} and latitude between {south} and {north} group by tag_key;")

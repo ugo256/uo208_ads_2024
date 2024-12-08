@@ -73,11 +73,11 @@ def write_credentials(username, password, url, port):
                            'port': port}
         yaml.dump(credentials_dict, file)
 
-class Database:
-
+class DatabaseConnection:
     def __init__(self):
         self.conn=None
-
+        username,password,url,port = self._read_credentials()
+        self._connect(username,password,url,'ads_2024',port)
     
         
     def _read_credentials(self):
@@ -113,10 +113,6 @@ class Database:
         except Exception as e:
             print(f"Error connecting to the MariaDB Server: {e}")
         self.conn = conn
-
-    def create_connection(self):
-        username,password,url,port = self._read_credentials()
-        self._connect(username,password,url,'ads_2024',port)
 
     def query(self,query,as_df=True):
         cur = self.conn.cursor()
