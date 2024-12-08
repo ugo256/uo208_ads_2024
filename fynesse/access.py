@@ -125,14 +125,14 @@ class DatabaseConnection:
         cur.execute(f"select * from {table_name} limit 0;")
         return self.query("select "+ ", ".join([f"sum(case when {desc[0]} is null then 1 else 0 end) as nullcnt_{desc[0]}" for desc in cur.description])+f" from {table_name};")
 
-def load_into_table(db,filename,tablename,ignorelines,lines,delimiter=',',enclosure='"',terminator='\n'):
+def load_into_table(db,filename,tablename,ignorelines,fields,delimiter=',',enclosure='"',terminator='\n'):
     db.query(f"""LOAD DATA LOCAL INFILE '{filename}'
     INTO TABLE {tablename}
     FIELDS TERMINATED BY '{delimiter}'
     OPTIONALLY ENCLOSED BY '{enclosure}'
     LINES TERMINATED BY '{terminator}'
     IGNORE {ignorelines} LINES
-    {lines};""")
+    {fields};""",False)
 
 
 def get_pois(bbox,tags):
