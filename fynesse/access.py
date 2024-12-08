@@ -120,10 +120,24 @@ class DatabaseConnection:
         if as_df:
             return pd.DataFrame(cur.fetchall(),columns = [desc[0] for desc in cur.description])
         
-    def count_nulls(self,table_name):
-        cur = self.conn.cursor()
-        cur.execute(f"select * from {table_name} limit 0;")
-        return self.query("select "+ ", ".join([f"sum(case when {desc[0]} is null then 1 else 0 end) as nullcnt_{desc[0]}" for desc in cur.description])+f" from {table_name};")
+def count_duplicates(db,table_name,col_names):
+    return db.query(f"""
+                    select
+                        {col_names} count(*) as cnt
+                    from
+                        {table_name}
+                    group by
+                        {col_names}
+                    having 
+                        cnt > 1
+                    order by
+                        cnt desc;
+                    """)
+
+def count_nulls(db,table_name):
+    cur = db.conn.cursor()
+    cur.execute(f"select * from {table_name} limit 0;")
+    return db.query("select "+ ", ".join([f"sum(case when {desc[0]} is null then 1 else 0 end) as nullcnt_{desc[0]}" for desc in cur.description])+f" from {table_name};")
 
 def load_into_table(db,filename,tablename,ignorelines,fields,delimiter=',',enclosure='"',terminator='\n'):
     db.query(f"""LOAD DATA LOCAL INFILE '{filename}'
