@@ -73,6 +73,18 @@ def write_credentials(username, password, url, port):
                            'port': port}
         yaml.dump(credentials_dict, file)
 
+legal_information = """
+Legal Information:
+
+[Census Data and Lookups]
+    Source: Office for National Statistics licensed under the Open Government Licence v.3.0
+
+[OpenStreetMap (OSM) Data]
+    © OpenStreetMap contributors
+    License: www.openstreetmap.org/copyright
+
+"""
+
 class DatabaseConnection:
     def __init__(self):
         self.conn=None
