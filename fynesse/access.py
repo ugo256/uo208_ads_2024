@@ -132,19 +132,7 @@ class DatabaseConnection:
         if as_df:
             return pd.DataFrame(cur.fetchall(),columns = [desc[0] for desc in cur.description])
         
-def count_duplicates(db,table_name,col_names):
-    return db.query(f"""
-                    select
-                        {col_names} , count(*) as cnt
-                    from
-                        {table_name}
-                    group by
-                        {col_names}
-                    having 
-                        cnt > 1
-                    order by
-                        cnt desc;
-                    """)
+
 
 def count_nulls(db,table_name):
     cur = db.conn.cursor()

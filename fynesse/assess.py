@@ -4,6 +4,7 @@ from .config import *
 from . import access
 import matplotlib.pyplot as plt
 import osmnx as ox
+import networkx as nx
 
 """These are the types of import we might expect in this file
 import pandas
@@ -133,7 +134,53 @@ def count_around(db,lon,lat,dist):
     west=bbox["west"]
     return db.query("select tag_key as tkey, count(tag_key) as freq from england_osm_node_geo as nodes inner join england_osm_tags as tags on tags.id = nodes.id  where longitude between {west} and {east} and latitude between {south} and {north} group by tag_key;")
 
+def group_columns(df,columns):
+    group_nodes = df[col]
 
+def count_duplicates_sql(db,table_name,col_names):
+    df = db.query(f"""
+                    select
+                        {col_names}
+                    from
+                        {table_name}
+                    """)
+    return count_duplicates(df)
+
+def count_duplicates(df,cols):
+    ans = df.groupby(cols).size().reset_index(name='count')
+    return ans[ans['count']>1]
+
+def group_columns(df: pd.DataFrame,columns: dict[str,list[str]]) -> pd.DataFrame:
+    lookup_dict = {
+        col: {
+            colval: pd.Series(df[colval].values, index=df[col]).to_dict() for colval in columns[col]
+        }
+        for col in columns
+    }
+
+    group_nodes = [set(df[col]) for col in columns]
+    G = nx.Graph()
+    G.add_nodes_from([(col, val) for i, col in enumerate(columns) for val in group_nodes[i]])
+    for index, row in df.iterrows():
+        for a, b in zip(list(columns.keys()), list(columns.keys())[1:]):
+            G.add_edge((a,row[a]),(b,row[b]))
+
+    Gcc = nx.connected_components(G)
+
+    aggregated_data = []
+    for component in list(Gcc):
+        aggregated_keys = {
+            col: ' '.join(sorted([node[1] for node in component if node[0]==col])) for col in columns
+        }
+        aggregated_vals = {
+            colval: sum(lookup_dict[col][colval][node[1]] for node in component if node[0] == col)
+            for col, colvals in columns.items()
+            for colval in colvals
+        }
+        aggregated_row = aggregated_keys | aggregated_vals
+        aggregated_data.append(aggregated_row)
+
+    return pd.DataFrame(aggregated_data)
 
 def data():
     """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
