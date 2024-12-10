@@ -138,14 +138,14 @@ def count_around(db,lon,lat,dist):
 def group_columns(df,columns):
     group_nodes = df[col]
 
-def count_duplicates_sql(db,table_name,col_names):
+def count_duplicates_sql(db,table_name,cols):
     df = db.query(f"""
                     select
-                        {col_names}
+                        {" ".join(cols)}
                     from
                         {table_name}
                     """)
-    return count_duplicates(df)
+    return count_duplicates(df,cols)
 
 def count_duplicates(df,cols):
     ans = df.groupby(cols).size().reset_index(name='count')
