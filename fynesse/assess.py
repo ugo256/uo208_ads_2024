@@ -5,6 +5,7 @@ from . import access
 import matplotlib.pyplot as plt
 import osmnx as ox
 import networkx as nx
+import pandas as pd
 
 """These are the types of import we might expect in this file
 import pandas
