@@ -108,10 +108,9 @@ def create_boxplot_subplots(data_list, rows, cols, titles=None, figsize=(10, 6))
     
     plt.show()
 
-def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10)):
+def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10),cols=3):
 
-    rows = (len(data) + 2) // 3
-    cols = 3
+    rows = (len(data) + cols-1) // cols
 
     fig, axes = plt.subplots(rows, cols, figsize=figsize, constrained_layout=True)
     axes = axes.flatten()
