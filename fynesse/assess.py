@@ -74,12 +74,12 @@ def plot_area(lat,lon,distance,name,tags):
 
 
 
-def plot_correlation(merged_df,method='pearson',xlabel = "x",ylabel = "y",xlog=False,ylog=False):
-    correlation = (merged_df["x"].corr(merged_df["y"],method=method))
+def plot_correlation(x,y,method='pearson',xlabel = "x",ylabel = "y",xlog=False,ylog=False):
+    correlation = (x.corr(y,method=method))
     print(f"The correlation ({method}) is {correlation}")
     print("plotting graph:")
 
-    plt.scatter(merged_df["x"], merged_df["y"], color="blue", alpha=0.7)
+    plt.scatter(x, y, color="blue", alpha=0.7)
 
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
