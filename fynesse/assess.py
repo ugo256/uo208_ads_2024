@@ -74,18 +74,19 @@ def plot_area(lat,lon,distance,name,tags):
 
 
 
-def plot_correlation(merged_df,method='pearson',log=False):
-    correlation = (merged_df["area"].corr(merged_df["price"],method=method))
+def plot_correlation(merged_df,method='pearson',xlabel = "x",ylabel = "y",xlog=False,ylog=False):
+    correlation = (merged_df["x"].corr(merged_df["y"],method=method))
     print(f"The correlation ({method}) is {correlation}")
     print("plotting graph:")
 
-    plt.scatter(merged_df["area"], merged_df["price"], color="blue", alpha=0.7)
+    plt.scatter(merged_df["x"], merged_df["y"], color="blue", alpha=0.7)
 
-    plt.xlabel("Area (sq km)")
-    plt.ylabel("Price (£)")
-    plt.title("Scatter Plot of Area vs. Price")
-    if log:
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(f"Scatter Plot of {ylabel} against {xlabel}")
+    if ylog:
         plt.yscale("log")
+    if xlog:
         plt.xscale("log")
 
     plt.show()
@@ -108,7 +109,7 @@ def create_boxplot_subplots(data_list, rows, cols, titles=None, figsize=(10, 6))
     
     plt.show()
 
-def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10),cols=3,log=False):
+def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10),cols=3):
 
     rows = (len(data) + cols-1) // cols
 
@@ -121,8 +122,6 @@ def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10),cols=3,log=
         axes[i].set_title(f"Histogram of {labels[i]}")
         axes[i].set_xlabel(labels[i])
         axes[i].set_ylabel("Frequency")
-        if log:
-            axes[i].xscale('log')
     for j in range(i + 1, len(axes)):
         axes[j].axis('off')
 
