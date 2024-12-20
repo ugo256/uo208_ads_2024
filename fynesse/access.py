@@ -161,7 +161,7 @@ def is_interesting(poi):
             return True
     return False
 
-class OSMHandler(osmium.SimpleHandler):
+class OSMHandler():
     def __init__(self):
         osmium.SimpleHandler.__init__(self)
         self.osm_tag = []
