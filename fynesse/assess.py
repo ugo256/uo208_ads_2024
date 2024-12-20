@@ -17,62 +17,87 @@ import sklearn.feature_extraction"""
 
 """Place commands in this file to assess the data you have downloaded. How are missing values encoded, how are outliers encoded? What do columns represent, makes rure they are correctly labeled. How is the data indexed. Crete visualisation routines to assess the data (e.g. in bokeh). Ensure that date formats are correct and correctly timezoned."""
 
-def plot_city(place_name,latitude,longitude):
+def get_counts_around(lat,lon,dist,tags):
+    bbox = fynesse.utils.get_bounding_box(lat,lon,dist)
+    matches = db.query(f"""select tag_key from england_osm_geo
+    inner join england_osm_tags on england_osm_tags.id = england_osm_geo.id
+    where lon between {bbox['west']} and {bbox['east']} and lat between {bbox['south']} and {bbox['north']};""")
+    if tags:
+        matches = matches[matches["tag_key"].isin(tags)]
+    return matches.value_counts()
 
-    bbox = access.get_bounding_box(latitude,longitude)
-    pois = access.get_pois(bbox,{"building":True})
+def get_all_counts_around(locations,dist,tags):
+    ans = []
+    for i,row in locations.iterrows():
+        lat = row["lat"]
+        lon = row["lon"]
+        counts = get_counts_around(lat,lon,dist,tags)
+        for tag in tags:
+            if tag not in counts:
+                counts[tag]=0
+        counts.rename(i,inplace=True)
+        ans.append(counts)
+    return pd.concat(ans,axis=1).transpose()
 
-    north=bbox["north"]
-    east=bbox["east"]
-    south=bbox["south"]
-    west=bbox["west"]
+def plot_surroundings(lat,lon,dist,colormap={},title="OSM Visualization Near {lat}N, {lon}E"):
+    bbox = fynesse.utils.get_bounding_box(lat,lon,dist)
+    matches = db.query(f"""select england_osm_geo.id, ST_AsText(geometry) as geometry, tag_key from england_osm_geo
+    inner join england_osm_tags on england_osm_tags.id = england_osm_geo.id
+    where lon between {bbox['west']} and {bbox['east']} and lat between {bbox['south']} and {bbox['north']};""")
 
-    keys = ["addr:housenumber", "addr:street", "addr:postcode","geometry","longitude","latitude"]
+    plt.figure(figsize=(10, 10))
+    ax = plt.gca()
 
-    present_keys = [key for key in keys if key in pois.columns]
+    pois = matches[["id","geometry"]].drop_duplicates()
 
-    all_pois = pois[present_keys]
-    all_pois["area"]=all_pois["geometry"].area
+    tags = {}
+    for i,row in matches.iterrows():
+        if not row["id"] in tags:
+            tags[row["id"]]=[]
+        tags[row["id"]].append(row["tag_key"])
 
-    valid_pois = all_pois.dropna(how="any")
-    invalid_pois = all_pois[all_pois.isna().any(axis=1)]
+    node_points = []
+    way_lines = []
 
-    graph = ox.graph_from_bbox(north, south, east, west)
+    for i,row in pois.iterrows():
+        geometry_wkt = row["geometry"]
+        shp = load_wkt(geometry_wkt)
+        if isinstance(shp, Point):
+            node_points.append((row["id"],shp))
+        if isinstance(shp, LineString):
+            way_lines.append((row["id"],shp))
 
-    # Retrieve nodes and edges
-    nodes, edges = ox.graph_to_gdfs(graph)
+    for id,point in node_points:
+        color = "#0000ff"
+        for tag_key in tags[id]:
+            if tag_key in colormap:
+                color = colormap[tag_key]
+                break
+        ax.plot(point.x, point.y, 'o', color=color, markersize=1)
 
-    # Get place boundary related to the place name as a geodataframe
-    area = ox.geocode_to_gdf(place_name)
+    for id,line in way_lines:
+        color = "#000000"
+        for tag_key in tags[id]:
+            if tag_key in colormap:
+                color = colormap[tag_key]
+                break
+        if line.is_ring:
+            # draw as polygon if the way is closed
+            polygon = Polygon(line)
+            x, y = polygon.exterior.xy
+            ax.fill(x, y, color=color, alpha=0.5)
+        else:
+            x, y = line.xy
+            ax.plot(x, y, '-', color=color, linewidth=0.5)
 
-    fig, ax = plt.subplots()
-
-    # Plot the footprint
-    area.plot(ax=ax, facecolor="white")
-
-    # Plot street edges
-    edges.plot(ax=ax, linewidth=1, edgecolor="dimgray")
-
-    ax.set_xlim([west, east])
-    ax.set_ylim([south, north])
-    ax.set_xlabel("longitude")
-    ax.set_ylabel("latitude")
-
-    # Plot all POIs
-    valid_pois.plot(ax=ax, color="blue", alpha=0.7, markersize=10)
-    invalid_pois.plot(ax=ax, color="red", alpha=0.7, markersize=10)
-    plt.tight_layout()
-
-def plot_area(lat,lon,distance,name,tags):
-    bbox = utils.get_bounding_box(lat,lon,distance)
-
-    north=bbox["north"]
-    east=bbox["east"]
-    south=bbox["south"]
-    west=bbox["west"]
-
-
-
+    plt.title(title.format(lat=lat,lon=lon))
+    plt.xlabel("Longitude")
+    plt.ylabel("Latitude")
+    plt.xlim(bbox["west"],bbox["east"])
+    plt.ylim(bbox["south"],bbox["north"])
+    plt.legend(loc="upper right")
+    plt.grid(True)
+    plt.show()
 
 def plot_correlation(x,y,method='pearson',xlabel = "x",ylabel = "y",xlog=False,ylog=False):
     correlation = (x.corr(y,method=method))
@@ -127,17 +152,59 @@ def create_histogram_subplots(data, labels,bins=10, figsize=(15, 10),cols=3):
 
     plt.show()
 
-def count_around(db,lon,lat,dist):
-    bbox = access.get_bounding_box(lat,lon,dist)
+def perform_pca(features):
+    scaler = StandardScaler()
+    standardized_features = scaler.fit_transform(features)
+    pca = PCA(n_components=None)
+    principal_components = pca.fit_transform(standardized_features)
+    pc_df = pd.DataFrame(principal_components, columns=[f"PC{i+1}" for i in range(principal_components.shape[1])])
+    plt.figure(figsize=(8, 5))
+    x_values = range(1, len(pca.explained_variance_ratio_) + 1)
+    y_values = pca.explained_variance_ratio_.cumsum()
+    # add (0, 0)
+    x_values = [0] + list(x_values)
+    y_values = [0] + list(y_values)
+    plt.plot(x_values,y_values, marker='o')
+    plt.xlabel("Number of Principal Components")
+    plt.ylabel("Cumulative Explained Variance")
+    plt.title("Explained Variance by Principal Components")
+    plt.grid()
+    plt.show()
+    loadings = pd.DataFrame(
+    pca.components_,
+    columns=features.columns,
+    index=[f"PC{i+1}" for i in range(pca.n_components_)]
+    )
 
-    north=bbox["north"]
-    east=bbox["east"]
-    south=bbox["south"]
-    west=bbox["west"]
-    return db.query("select tag_key as tkey, count(tag_key) as freq from england_osm_node_geo as nodes inner join england_osm_tags as tags on tags.id = nodes.id  where longitude between {west} and {east} and latitude between {south} and {north} group by tag_key;")
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(loadings.T, annot=True, cmap='coolwarm', fmt='.2f', center=0)
 
-def group_columns(df,columns):
-    group_nodes = df[col]
+    plt.title('Heatmap of PCA Loadings')
+    plt.xlabel('Principal Components')
+    plt.ylabel('Variables')
+
+    plt.show()
+    return pc_df
+
+def hierarchical_clustering(df,num_clusters,method='ward',title="Hierarchical Clustering Dendrogram"):
+
+    scaler = StandardScaler()
+    normalized_data = scaler.fit_transform(df)
+
+    linkage_matrix = linkage(normalized_data, method=method)
+
+    plt.figure(figsize=(10, 5))
+    dendrogram(linkage_matrix, labels=df.index, leaf_rotation=90)
+    plt.title(title)
+    plt.xlabel("Sample Index")
+    plt.ylabel("Distance")
+    plt.show()
+
+    cluster_labels = fcluster(linkage_matrix, num_clusters, criterion='maxclust')
+    cluster_counts = pd.Series(cluster_labels).value_counts()
+    print(cluster_counts)
+
+    return cluster_labels
 
 def count_duplicates_sql(db,table_name,cols):
     df = db.query(f"""
@@ -184,19 +251,19 @@ def group_columns(df: pd.DataFrame,columns: dict[str,list[str]]) -> pd.DataFrame
 
     return pd.DataFrame(aggregated_data)
 
-def data():
-    """Load the data from access and ensure missing values are correctly encoded as well as indices correct, column names informative, date and times correctly formatted. Return a structured data structure such as a data frame."""
-    df = access.data()
-    raise NotImplementedError
 
-def query(data):
-    """Request user input for some aspect of the data."""
-    raise NotImplementedError
 
-def view(data):
-    """Provide a view of the data that allows the user to verify some aspect of its quality."""
-    raise NotImplementedError
+def clustered_scatter_plot(df,x,y,alpha,xlabel,ylabel,title):
 
-def labelled(data):
-    """Provide a labelled set of data ready for supervised learning."""
-    raise NotImplementedError
+  plt.figure(figsize=(10, 6))
+  sns.scatterplot(x=x, y=y, hue='cluster', data=df, palette='Set2',alpha=alpha)
+
+  plt.title(title, fontsize=14)
+  plt.xlabel(xlabel, fontsize=12)
+  plt.ylabel(ylabel, fontsize=12)
+  plt.legend(title='Cluster', loc='best')
+  plt.grid(True)
+
+  plt.show()
+
+clustered_scatter_plot(grouped_occupancy,"11_oci","1121_change_oci",0.8,"x","y","title")
